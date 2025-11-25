@@ -1,0 +1,13 @@
+services:
+  rooms-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: sgh-rooms-scheduler
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - ROOMS_SCHEDULER_PORT=3000
+      - JWT_SECRET=your_jwt_secret

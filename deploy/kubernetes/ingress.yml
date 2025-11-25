@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sgh
+  namespace: sgh
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: sgh.inf.uct.cl
+    external-dns.alpha.kubernetes.io/target: proxy.inf.uct.cl
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ sgh.inf.uct.cl ]
+      secretName: inf-uct-cl-tls  # Referencia al Secret del certificado
+  rules:
+    - host: sgh.inf.uct.cl
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000

@@ -1,0 +1,55 @@
+# Node/JavaScript
+node_modules/
+**/node_modules/
+dist/
+dev-dist/
+.vite/
+.next/
+out/
+*.tsbuildinfo
+*.eslintcache
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+.vercel/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.cache/
+.python-version
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+build/
+coverage/
+.coverage*
+.nyc_output/
+*.lcov
+
+# Editors/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Compiled binaries
+*.out
+*.o
+*.a
+*.so
+*.exe

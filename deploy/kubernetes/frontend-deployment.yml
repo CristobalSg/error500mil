@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: sgh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sgh-frontend
+  template:
+    metadata:
+      labels:
+        app: sgh-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: registry.inf.uct.cl/omellado/sgh/frontend
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 100m
+              memory: "256Mi"
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: IONIC_ENV
+              value: development
+            - name: API_URL
+              value: https://sgh.inf.uct.cl/api/

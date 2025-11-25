@@ -1,0 +1,6 @@
+.qmake.stash
+Makefile
+tmp/
+fet
+fet-cl
+src/Makefile.src-cl

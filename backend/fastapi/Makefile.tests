@@ -1,0 +1,443 @@
+# Makefile para gestión de pruebas - SGH Backend
+
+# Variables
+PYTHON := python
+PYTEST := $(PYTHON) -m pytest
+SHELL := /bin/bash
+TEST_DIR := tests
+COVERAGE_DIR := htmlcov
+
+# Directorios de configuración
+CONFIG_DIR := .config
+LINTING_CONFIG := $(CONFIG_DIR)/linting
+SECURITY_CONFIG := $(CONFIG_DIR)/security
+TESTING_CONFIG := $(CONFIG_DIR)/testing
+ALEMBIC_CONFIG := $(CONFIG_DIR)/alembic
+
+# Variables Docker
+DOCKER_COMPOSE := docker compose --env-file ../../.env.development -f ../../docker-compose.dev.yml
+DOCKER_EXEC := $(DOCKER_COMPOSE) exec backend
+DOCKER_RUN := $(DOCKER_COMPOSE) run --rm backend
+
+# Colores para output
+GREEN := \033[0;32m
+RED := \033[0;31m
+YELLOW := \033[1;33m
+BLUE := \033[0;34m
+CYAN := \033[0;36m
+NC := \033[0m # No Color
+
+.PHONY: help test test-verbose test-cov test-cov-html test-unit test-integration install-test clean-cov \
+         test-docente test-asignatura test-clase test-seccion test-bloque test-restriccion test-restriccion-horario test-auth \
+         test-auth-api test-db-api test-main-api test-restricciones-api test-restriccion-horario-api \
+         test-docente-cov test-asignatura-cov test-clase-cov test-seccion-cov test-bloque-cov test-restriccion-cov test-restriccion-horario-cov test-auth-cov \
+         docker-test docker-test-cov docker-test-verbose \
+         security security-bandit security-safety security-deps security-secrets security-all \
+         lint lint-flake8 lint-pylint lint-mypy lint-black lint-isort lint-all \
+         format format-black format-isort format-all \
+         docker-security docker-lint docker-format \
+         install-security install-lint ci-pipeline ci-security ci-lint ci-test
+
+help: ## Mostrar ayuda
+	@echo "$(GREEN)Comandos disponibles:$(NC)"
+	@echo "$(YELLOW)═══ Comandos Generales ═══$(NC)"
+	@echo "  $(YELLOW)test$(NC)                    - Ejecutar todas las pruebas (local)"
+	@echo "  $(YELLOW)test-verbose$(NC)            - Ejecutar todas las pruebas con salida verbose"
+	@echo "  $(YELLOW)test-unit$(NC)               - Ejecutar solo pruebas unitarias"
+	@echo "  $(YELLOW)test-integration$(NC)        - Ejecutar solo pruebas de integración"
+	@echo "  $(YELLOW)test-cov$(NC)                - Ejecutar pruebas con reporte de cobertura"
+	@echo "  $(YELLOW)test-cov-html$(NC)           - Ejecutar pruebas con reporte HTML de cobertura"
+	@echo ""
+	@echo "$(BLUE)═══ Comandos Docker ═══$(NC)"
+	@echo "  $(BLUE)docker-test$(NC)             - Ejecutar todas las pruebas en Docker"
+	@echo "  $(BLUE)docker-test-cov$(NC)         - Ejecutar pruebas con cobertura en Docker"
+	@echo "  $(BLUE)docker-test-verbose$(NC)     - Ejecutar pruebas verbose en Docker"
+	@echo "  $(BLUE)docker-security$(NC)         - Ejecutar análisis de seguridad en Docker"
+	@echo "  $(BLUE)docker-lint$(NC)             - Ejecutar linters en Docker"
+	@echo "  $(BLUE)docker-format$(NC)           - Formatear código en Docker"
+	@echo ""
+	@echo "$(CYAN)═══ Análisis de Seguridad ═══$(NC)"
+	@echo "  $(CYAN)security-bandit$(NC)         - Analizar código con Bandit"
+	@echo "  $(CYAN)security-safety$(NC)         - Verificar vulnerabilidades en dependencias"
+	@echo "  $(CYAN)security-deps$(NC)           - Auditoría de dependencias con pip-audit"
+	@echo "  $(CYAN)security-secrets$(NC)        - Detectar secretos con detect-secrets"
+	@echo "  $(CYAN)security-all$(NC)            - Ejecutar todos los análisis de seguridad"
+	@echo ""
+	@echo "$(CYAN)═══ Linting y Análisis Estático ═══$(NC)"
+	@echo "  $(CYAN)lint-flake8$(NC)             - Linting con Flake8"
+	@echo "  $(CYAN)lint-pylint$(NC)             - Linting con Pylint"
+	@echo "  $(CYAN)lint-mypy$(NC)               - Type checking con MyPy"
+	@echo "  $(CYAN)lint-black$(NC)              - Verificar formato con Black"
+	@echo "  $(CYAN)lint-isort$(NC)              - Verificar imports con isort"
+	@echo "  $(CYAN)lint-all$(NC)                - Ejecutar todos los linters"
+	@echo ""
+	@echo "$(CYAN)═══ Formateo de Código ═══$(NC)"
+	@echo "  $(CYAN)format-black$(NC)            - Formatear código con Black"
+	@echo "  $(CYAN)format-isort$(NC)            - Ordenar imports con isort"
+	@echo "  $(CYAN)format-all$(NC)              - Aplicar todo el formateo"
+	@echo ""
+	@echo "$(RED)═══ CI/CD Pipeline ═══$(NC)"
+	@echo "  $(RED)ci-pipeline$(NC)             - Ejecutar pipeline completo (lint + security + test)"
+	@echo "  $(RED)ci-security$(NC)             - Ejecutar solo checks de seguridad"
+	@echo "  $(RED)ci-lint$(NC)                 - Ejecutar solo linters"
+	@echo "  $(RED)ci-test$(NC)                 - Ejecutar solo tests con cobertura"
+	@echo ""
+	@echo "$(YELLOW)═══ Pruebas Unitarias Específicas ═══$(NC)"
+	@echo "  $(YELLOW)test-docente$(NC)            - Ejecutar pruebas de Docente"
+	@echo "  $(YELLOW)test-asignatura$(NC)         - Ejecutar pruebas de Asignatura"
+	@echo "  $(YELLOW)test-clase$(NC)              - Ejecutar pruebas de Clase"
+	@echo "  $(YELLOW)test-seccion$(NC)            - Ejecutar pruebas de Seccion"
+	@echo "  $(YELLOW)test-bloque$(NC)             - Ejecutar pruebas de Bloque"
+	@echo "  $(YELLOW)test-restriccion$(NC)        - Ejecutar pruebas de Restriccion"
+	@echo "  $(YELLOW)test-restriccion-horario$(NC) - Ejecutar pruebas de RestriccionHorario"
+	@echo "  $(YELLOW)test-auth$(NC)               - Ejecutar pruebas de Autenticación"
+	@echo ""
+	@echo "$(YELLOW)═══ Pruebas de API ═══$(NC)"
+	@echo "  $(YELLOW)test-auth-api$(NC)           - Ejecutar pruebas de API de Autenticación"
+	@echo "  $(YELLOW)test-db-api$(NC)             - Ejecutar pruebas de API de DB"
+	@echo "  $(YELLOW)test-main-api$(NC)           - Ejecutar pruebas de API principal"
+	@echo "  $(YELLOW)test-restricciones-api$(NC)  - Ejecutar pruebas de API de Restricciones"
+	@echo "  $(YELLOW)test-restriccion-horario-api$(NC) - Ejecutar pruebas de API de RestriccionHorario"
+	@echo ""
+	@echo "$(YELLOW)═══ Utilidades ═══$(NC)"
+	@echo "  $(YELLOW)install-test$(NC)            - Instalar dependencias de testing"
+	@echo "  $(YELLOW)install-security$(NC)        - Instalar herramientas de seguridad"
+	@echo "  $(YELLOW)install-lint$(NC)            - Instalar herramientas de linting"
+	@echo "  $(YELLOW)clean-cov$(NC)               - Limpiar archivos de cobertura"
+	@echo "  $(YELLOW)watch-test$(NC)              - Ejecutar pruebas en modo watch"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMANDOS DOCKER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+docker-test: ## Ejecutar todas las pruebas en Docker
+	@echo "$(BLUE)🐳 Ejecutando pruebas en contenedor Docker...$(NC)"
+	$(DOCKER_EXEC) pytest $(TEST_DIR) -v
+
+docker-test-cov: ## Ejecutar pruebas con cobertura en Docker
+	@echo "$(BLUE)🐳 Ejecutando pruebas con cobertura en Docker...$(NC)"
+	$(DOCKER_EXEC) pytest $(TEST_DIR) \
+		--cov=application \
+		--cov=domain \
+		--cov=infrastructure \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov-report=html:$(COVERAGE_DIR)
+
+docker-test-verbose: ## Ejecutar pruebas verbose en Docker
+	@echo "$(BLUE)🐳 Ejecutando pruebas verbose en Docker...$(NC)"
+	$(DOCKER_EXEC) pytest $(TEST_DIR) -vv
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ANÁLISIS DE SEGURIDAD
+# ═══════════════════════════════════════════════════════════════════════════════
+
+security-bandit: ## Analizar código con Bandit (vulnerabilidades de seguridad)
+	@echo "$(CYAN)🔒 Ejecutando análisis de seguridad con Bandit...$(NC)"
+	@bandit -c $(SECURITY_CONFIG)/.bandit -r api/ application/ domain/ infrastructure/ -f json -o bandit-report.json || true
+	@bandit -c $(SECURITY_CONFIG)/.bandit -r api/ application/ domain/ infrastructure/ -ll -f screen
+
+security-safety: ## Verificar vulnerabilidades en dependencias con Safety
+	@echo "$(CYAN)🔒 Verificando vulnerabilidades en dependencias con Safety...$(NC)"
+	@echo "$(YELLOW)⚠️  Safety temporalmente deshabilitado (incompatibilidad con typer)$(NC)"
+	@# safety check --json || true
+	@# safety check || true
+
+security-deps: ## Auditoría de dependencias con pip-audit
+	@echo "$(CYAN)🔒 Ejecutando auditoría de dependencias con pip-audit...$(NC)"
+	@pip-audit --desc -o bandit-audit.json || true
+	@pip-audit --desc || true
+
+security-secrets: ## Detectar secretos hardcodeados con detect-secrets
+	@echo "$(CYAN)🔒 Detectando secretos hardcodeados...$(NC)"
+	@echo "$(YELLOW)⚠️  detect-secrets requiere git - omitido en Docker$(NC)"
+	@# detect-secrets scan --baseline $(SECURITY_CONFIG)/.secrets.baseline || true
+	@echo "$(GREEN)✓ Análisis de secretos completado$(NC)"
+
+security-semgrep: ## Análisis estático con Semgrep
+	@echo "$(CYAN)🔒 Ejecutando análisis con Semgrep...$(NC)"
+	@semgrep --config=auto --json -o semgrep-report.json . || true
+	@semgrep --config=auto . || true
+
+security-all: security-bandit security-safety security-deps security-secrets ## Ejecutar todos los análisis de seguridad
+	@echo "$(GREEN)✓ Análisis de seguridad completado$(NC)"
+
+# Comandos Docker para seguridad
+docker-security: ## Ejecutar análisis de seguridad en Docker
+	@echo "$(BLUE)🐳🔒 Ejecutando análisis de seguridad en Docker...$(NC)"
+	$(DOCKER_EXEC) bandit -c $(SECURITY_CONFIG)/.bandit -r api/ application/ domain/ infrastructure/ -ll
+	$(DOCKER_EXEC) safety check || true
+	$(DOCKER_EXEC) pip-audit --desc || true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINTING Y ANÁLISIS ESTÁTICO
+# ═══════════════════════════════════════════════════════════════════════════════
+
+lint-flake8: ## Linting con Flake8
+	@echo "$(CYAN)🔍 Ejecutando Flake8...$(NC)"
+	@flake8 api/ application/ domain/ infrastructure/ \
+		--config=$(LINTING_CONFIG)/.flake8 \
+		--format=default || true
+
+lint-pylint: ## Linting con Pylint
+	@echo "$(CYAN)🔍 Ejecutando Pylint...$(NC)"
+	@pylint api/ application/ domain/ infrastructure/ \
+		--rcfile=$(LINTING_CONFIG)/.pylintrc \
+		--output-format=colorized || true
+
+lint-mypy: ## Type checking con MyPy
+	@echo "$(CYAN)🔍 Ejecutando MyPy (type checking)...$(NC)"
+	@mypy api/ application/ domain/ infrastructure/ \
+		--config-file=$(LINTING_CONFIG)/mypy.ini \
+		--show-error-codes \
+		--pretty || true
+
+lint-black: ## Verificar formato con Black
+	@echo "$(CYAN)🔍 Verificando formato con Black...$(NC)"
+	@black --check --diff api/ application/ domain/ infrastructure/ tests/ \
+		--config $(CONFIG_DIR)/pyproject.toml || true
+
+lint-isort: ## Verificar imports con isort
+	@echo "$(CYAN)🔍 Verificando imports con isort...$(NC)"
+	@isort --check-only --diff api/ application/ domain/ infrastructure/ tests/ \
+		--settings-path=$(CONFIG_DIR)/pyproject.toml || true
+
+lint-all: lint-flake8 lint-black lint-isort lint-mypy ## Ejecutar todos los linters
+	@echo "$(GREEN)✓ Linting completado$(NC)"
+
+# Comandos Docker para linting
+docker-lint: ## Ejecutar linters en Docker
+	@echo "$(BLUE)🐳🔍 Ejecutando linters en Docker...$(NC)"
+	$(DOCKER_EXEC) flake8 api/ application/ domain/ infrastructure/ --config=$(LINTING_CONFIG)/.flake8
+	$(DOCKER_EXEC) black --check api/ application/ domain/ infrastructure/ tests/ --config $(CONFIG_DIR)/pyproject.toml
+	$(DOCKER_EXEC) isort --check-only api/ application/ domain/ infrastructure/ tests/ --settings-path=$(CONFIG_DIR)/pyproject.toml
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FORMATEO DE CÓDIGO
+# ═══════════════════════════════════════════════════════════════════════════════
+
+format-black: ## Formatear código con Black
+	@echo "$(CYAN)✨ Formateando código con Black...$(NC)"
+	@black api/ application/ domain/ infrastructure/ tests/ --config $(CONFIG_DIR)/pyproject.toml
+	@echo "$(GREEN)✓ Código formateado con Black$(NC)"
+
+format-isort: ## Ordenar imports con isort
+	@echo "$(CYAN)✨ Ordenando imports con isort...$(NC)"
+	@isort api/ application/ domain/ infrastructure/ tests/ \
+		--settings-path=$(CONFIG_DIR)/pyproject.toml
+	@echo "$(GREEN)✓ Imports ordenados$(NC)"
+
+format-all: format-black format-isort ## Aplicar todo el formateo
+	@echo "$(GREEN)✓ Formateo completado$(NC)"
+
+# Comandos Docker para formateo
+docker-format: ## Formatear código en Docker
+	@echo "$(BLUE)🐳✨ Formateando código en Docker...$(NC)"
+	$(DOCKER_EXEC) black api/ application/ domain/ infrastructure/ tests/ --config $(CONFIG_DIR)/pyproject.toml
+	$(DOCKER_EXEC) isort api/ application/ domain/ infrastructure/ tests/ --settings-path=$(CONFIG_DIR)/pyproject.toml
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRUEBAS (LOCALES)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test: ## Ejecutar todas las pruebas
+	@echo "$(GREEN)🧪 Ejecutando pruebas...$(NC)"
+	$(PYTEST) $(TEST_DIR) -c $(TESTING_CONFIG)/pytest.ini
+
+test-verbose: ## Ejecutar todas las pruebas con salida verbose
+	@echo "$(GREEN)🧪 Ejecutando pruebas (verbose)...$(NC)"
+	$(PYTEST) $(TEST_DIR) -v -c $(TESTING_CONFIG)/pytest.ini
+
+test-unit: ## Ejecutar solo pruebas unitarias
+	@echo "$(GREEN)🧪 Ejecutando pruebas unitarias...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application -v
+
+test-integration: ## Ejecutar solo pruebas de integración
+	@echo "$(GREEN)🧪 Ejecutando pruebas de integración...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration -v
+
+# ═══ Pruebas Unitarias Específicas ═══
+
+test-docente: ## Ejecutar solo pruebas de Docente
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Docente...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_docente_use_cases.py -v
+
+test-asignatura: ## Ejecutar solo pruebas de Asignatura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Asignatura...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_asignatura_use_cases.py -v
+
+test-clase: ## Ejecutar solo pruebas de Clase
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Clase...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_clase_use_cases.py -v
+
+test-seccion: ## Ejecutar solo pruebas de Seccion
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Seccion...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_seccion_use_cases.py -v
+
+test-bloque: ## Ejecutar solo pruebas de Bloque
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Bloque...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_bloque_use_cases.py -v
+
+test-restriccion: ## Ejecutar solo pruebas de Restriccion
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Restriccion...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_restriccion_use_cases.py -v
+
+test-restriccion-horario: ## Ejecutar solo pruebas de RestriccionHorario
+	@echo "$(GREEN)🧪 Ejecutando pruebas de RestriccionHorario...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_restriccion_horario_use_cases.py -v
+
+test-auth: ## Ejecutar solo pruebas de Autenticación
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Autenticación...$(NC)"
+	$(PYTEST) $(TEST_DIR)/application/use_cases/test_user_auth_use_cases.py -v
+
+# ═══ Pruebas de API ═══
+
+test-auth-api: ## Ejecutar solo pruebas de API de Autenticación
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API de Autenticación...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_auth_api.py -v
+
+test-db-api: ## Ejecutar solo pruebas de API de DB
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API de DB...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_db_api.py -v
+
+test-main-api: ## Ejecutar solo pruebas de API principal
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API principal...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_main_api.py -v
+
+test-restricciones-api: ## Ejecutar solo pruebas de API de Restricciones
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API de Restricciones...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_restricciones_api.py -v
+
+test-restriccion-horario-api: ## Ejecutar solo pruebas de API de RestriccionHorario
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API de RestriccionHorario...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_restriccion_horario_api.py -v
+
+test-api: ## Ejecutar solo pruebas de API de restricciones
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API de restricciones...$(NC)"
+	$(PYTEST) $(TEST_DIR)/integration/test_restricciones_api.py -v
+
+test-cov: ## Ejecutar pruebas con reporte de cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas con cobertura...$(NC)"
+	$(PYTEST) $(TEST_DIR) \
+		--cov=application \
+		--cov=domain \
+		--cov=infrastructure \
+		--cov-report=term-missing \
+		--cov-report=xml
+
+test-cov-html: ## Ejecutar pruebas con reporte HTML de cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas con cobertura HTML...$(NC)"
+	$(PYTEST) $(TEST_DIR) \
+		--cov=application \
+		--cov=domain \
+		--cov=infrastructure \
+		--cov-report=html:$(COVERAGE_DIR) \
+		--cov-report=term-missing
+	@echo "$(YELLOW)📊 Reporte HTML generado en: $(COVERAGE_DIR)/index.html$(NC)"
+
+test-restriccion-horario-cov: ## Ejecutar pruebas de RestriccionHorario con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de RestriccionHorario con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_restriccion_horario_use_cases.py \
+		--cov=application.use_cases.restriccion_horario_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-api-cov: ## Ejecutar pruebas de API con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de API con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/integration/test_restricciones_api.py \
+		--cov=infrastructure.controllers.restriccion_controller \
+		--cov=application.use_cases.restriccion_use_cases \
+		--cov-report=term-missing \
+		-v
+
+# ═══ Pruebas con Cobertura Específicas ═══
+
+test-docente-cov: ## Ejecutar pruebas de Docente con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Docente con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_docente_use_cases.py \
+		--cov=application.use_cases.docente_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-asignatura-cov: ## Ejecutar pruebas de Asignatura con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Asignatura con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_asignatura_use_cases.py \
+		--cov=application.use_cases.asignatura_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-clase-cov: ## Ejecutar pruebas de Clase con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Clase con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_clase_use_cases.py \
+		--cov=application.use_cases.clase_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-seccion-cov: ## Ejecutar pruebas de Seccion con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Seccion con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_seccion_use_cases.py \
+		--cov=application.use_cases.seccion_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-bloque-cov: ## Ejecutar pruebas de Bloque con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Bloque con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_bloque_use_cases.py \
+		--cov=application.use_cases.bloque_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-restriccion-cov: ## Ejecutar pruebas de Restriccion con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Restriccion con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_restriccion_use_cases.py \
+		--cov=application.use_cases.restriccion_use_cases \
+		--cov-report=term-missing \
+		-v
+
+test-auth-cov: ## Ejecutar pruebas de Autenticación con cobertura
+	@echo "$(GREEN)🧪 Ejecutando pruebas de Autenticación con cobertura...$(NC)"
+	$(PYTEST) \
+		$(TEST_DIR)/application/use_cases/test_user_auth_use_cases.py \
+		--cov=application.use_cases.user_auth_use_cases \
+		--cov-report=term-missing \
+		-v
+
+install-test: ## Instalar dependencias de testing
+	@echo "$(GREEN)📦 Instalando dependencias de testing...$(NC)"
+	pip install pytest pytest-asyncio pytest-cov pytest-watch
+
+install-security: ## Instalar herramientas de seguridad
+	@echo "$(GREEN)📦 Instalando herramientas de seguridad...$(NC)"
+	pip install bandit safety pip-audit detect-secrets semgrep
+
+install-lint: ## Instalar herramientas de linting
+	@echo "$(GREEN)📦 Instalando herramientas de linting...$(NC)"
+	pip install flake8 pylint mypy black isort
+
+install-all: install-test install-security install-lint ## Instalar todas las herramientas
+	@echo "$(GREEN)✓ Todas las herramientas instaladas$(NC)"
+
+clean-cov: ## Limpiar archivos de cobertura
+	@echo "$(GREEN)🧹 Limpiando archivos de cobertura...$(NC)"
+	rm -rf $(COVERAGE_DIR)
+	rm -f .coverage
+	rm -f coverage.xml
+
+# Targets para desarrollo
+watch-test: ## Ejecutar pruebas en modo watch (requiere pytest-watch)
+	@echo "$(GREEN)👀 Ejecutando pruebas en modo watch...$(NC)"
+	pip install pytest-watch
+	ptw $(TEST_DIR)
+
+# Target por defecto
+.DEFAULT_GOAL := help

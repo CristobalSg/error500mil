@@ -1,0 +1,67 @@
+# Configuración de Pylint para SGH Backend
+
+[MASTER]
+# Archivos o directorios a ignorar
+ignore=migrations,alembic,__pycache__,.venv,venv,tests,.pytest_cache
+ignore-patterns=test_.*?py,conftest.py
+
+# Workers para análisis paralelo
+jobs=1
+
+# Extensiones de archivo a analizar
+extension-pkg-whitelist=pydantic
+
+[MESSAGES CONTROL]
+# Deshabilitar mensajes específicos
+disable=
+    C0111,  # missing-docstring
+    C0103,  # invalid-name
+    R0903,  # too-few-public-methods (común en modelos)
+    R0913,  # too-many-arguments
+    W0212,  # protected-access
+    C0330,  # bad-continuation
+    W0511,  # fixme (TODO, FIXME, etc)
+    R0801,  # duplicate-code
+    E1101,  # no-member (falsos positivos con SQLAlchemy)
+    R0914,  # too-many-locals
+
+[FORMAT]
+# Longitud máxima de línea
+max-line-length=100
+
+# Número máximo de líneas en un módulo
+max-module-lines=1000
+
+# Indentación con espacios
+indent-string='    '
+
+[BASIC]
+# Convenciones de nombres
+good-names=i,j,k,id,db,_,e,ex
+
+# Expresión regular para nombres de variables
+variable-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Expresión regular para nombres de constantes
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+[DESIGN]
+# Número máximo de argumentos en una función
+max-args=7
+
+# Número máximo de atributos en una clase
+max-attributes=15
+
+# Número máximo de métodos públicos
+max-public-methods=20
+
+# Número mínimo de métodos públicos
+min-public-methods=1
+
+[IMPORTS]
+# Permitir importaciones con comodín en __init__.py
+allow-wildcard-with-all=yes
+
+[EXCEPTIONS]
+# Excepciones que no deberían ser capturadas de forma genérica
+overgeneral-exceptions=builtins.Exception

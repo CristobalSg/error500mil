@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: sgh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sgh-agent
+  template:
+    metadata:
+      labels:
+        app: sgh-agent
+    spec:
+      containers:
+        - name: sgh-agent
+          image: integra4sgh/agent:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8200
+          #resources:
+          #  requests:
+          #    cpu: 100m
+          #    memory: "256Mi"
+          env:
+            - name: PORT
+              value: "8200"
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+            - name: JWT_REFRESH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: refresh
+            - name: JWT_ALGORITHM
+              value: HS256
+            - name: JWT_EXPIRE_MINUTES
+              value: "30"
+            - name: PYTHONPATH
+              value: /app
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+           #- name: CORS_ORIGINS
+           #  value: https://sgh.inf.uct.cl/,http://localhost:8100,http://localhost:8100/,https://localhost:8100,http://mobile:8100,https://mobile:8100,http://localhost:5173,https://sgh-6sy8ra4nt-cristobalsgs-projects.vercel.app,https://sgh-mu.vercel.app
+            - name: CORS_ORIGINS
+              value: "*"

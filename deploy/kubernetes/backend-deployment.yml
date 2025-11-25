@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: sgh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sgh-backend
+  template:
+    metadata:
+      labels:
+        app: sgh-backend
+    spec:
+      containers:
+        - name: sgh-backend
+          image: integra4sgh/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: "256Mi"
+          env:
+            - name: AGENT_API_URL
+              value: http://agent.sgh.svc:8200/api
+            - name: ROOMS_SCHEDULER_URL
+              value: http://rooms-scheduler.sgh.svc:3000/api
+            - name: INITIAL_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: admin-secret
+                  key: username
+            - name: INITIAL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: admin-secret
+                  key: password
+            - name: INITIAL_ADMIN_EMAIL
+              value: admin@inf.uct.cl
+            - name: POSTGRES_DB
+              value: sgh_production
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: POSTGRES_HOST
+              value: postgres-cluster-rw.sgh.svc
+            - name: BACKEND_PORT
+              value: "8000"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: DB_URL
+              valueFrom: 
+                secretKeyRef:
+                  name: postgres-url-secret
+                  key: url
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+            - name: JWT_REFRESH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: refresh
+            - name: JWT_ALGORITHM
+              value: HS256
+            - name: JWT_EXPIRE_MINUTES
+              value: "30"
+            - name: PYTHONPATH
+              value: /app
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: NODE_ENV
+              value: production
+            - name: BACK_ENV
+              value: production
+           #- name: CORS_ORIGINS
+           #  value: https://sgh.inf.uct.cl/,http://localhost:8100,http://localhost:8100/,https://localhost:8100,http://mobile:8100,https://mobile:8100,http://localhost:5173,https://sgh-6sy8ra4nt-cristobalsgs-projects.vercel.app,https://sgh-mu.vercel.app
+            - name: CORS_ORIGINS
+              value: "*"

@@ -1,0 +1,13 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./:/app
+      - ../algorithm:/app/algorithm
+

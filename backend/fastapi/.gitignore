@@ -1,0 +1,107 @@
+# Entorno virtual
+env/
+venv/
+ENV/
+.venv/
+.ENV/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+*.env
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.cache
+nosetests.xml
+htmlcov/
+.tox/
+.nox/
+
+# Reportes de seguridad y linting
+bandit-report.json
+bandit-audit.json
+semgrep-report.json
+.mypy_cache/
+.pylint.d/
+.ruff_cache/
+
+# Alembic
+# No ignoramos las migraciones, pero sí los archivos temporales
+alembic.ini.bak
+
+# FastAPI / Uvicorn
+*.log
+logs/
+
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# Documentación generada
+docs/_build/
+site/
+
+# Docker (si usas en el futuro)
+.dockerignore
+docker-compose.override.yml
+
+# Jupyter Notebook (si usas)
+.ipynb_checkpoints
+
+# profiling
+.prof

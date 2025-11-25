@@ -1,0 +1,18 @@
+# Configuración de Bandit para SGH Backend
+# Análisis de seguridad estático para Python
+
+exclude_dirs:
+  - /tests
+  - /migrations
+  - /__pycache__
+  - /.venv
+  - /venv
+  - /.pytest_cache
+
+skips:
+  - B101  # assert_used - permitido en desarrollo
+  - B601  # paramiko_calls - no lo usamos
+
+# assert_used:
+#   skips:
+#     - '*/tests/*'

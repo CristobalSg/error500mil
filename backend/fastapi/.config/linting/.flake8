@@ -1,0 +1,40 @@
+[flake8]
+# Configuración de Flake8 para SGH Backend
+
+# Longitud máxima de línea
+max-line-length = 100
+
+# Complejidad ciclomática máxima
+max-complexity = 10
+
+# Ignorar ciertos errores
+extend-ignore = 
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    E501,  # line too long (manejado por black)
+
+# Excluir directorios
+exclude =
+    __pycache__,
+    .git,
+    .venv,
+    venv,
+    env,
+    migrations,
+    alembic,
+    .pytest_cache,
+    htmlcov,
+    dist,
+    build,
+    *.egg-info
+
+# Importaciones por línea
+per-file-ignores =
+    __init__.py:F401,F403
+    config.py:E501
+
+# Formato de salida
+format = default
+show-source = True
+statistics = True
+count = True

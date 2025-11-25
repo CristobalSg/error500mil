@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rooms-scheduler
+  namespace: sgh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sgh-rooms-scheduler
+  template:
+    metadata:
+      labels:
+        app: sgh-rooms-scheduler
+    spec:
+      containers:
+        - name: sgh-rooms-scheduler
+          image: integra4sgh/rooms-scheduler:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          #resources:
+          #  requests:
+          #    cpu: 100m
+          #    memory: "256Mi"
+          env:
+            - name: PORT
+              value: "3000"
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+            - name: JWT_REFRESH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: refresh
+            - name: JWT_ALGORITHM
+              value: HS256
+            - name: JWT_EXPIRE_MINUTES
+              value: "30"

@@ -1,0 +1,26 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-cluster
+  namespace: sgh
+spec:
+  instances: 1
+  bootstrap:
+    initdb:
+      database: sgh_production
+      owner: sgh_admin
+      secret:
+        name: postgres-secret
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+  storage:
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 50Gi
+      storageClassName: csi-cephfs-sc
+      volumeMode: Filesystem
