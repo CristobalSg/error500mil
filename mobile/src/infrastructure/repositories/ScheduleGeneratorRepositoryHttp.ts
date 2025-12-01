@@ -3,10 +3,10 @@ import type { ScheduleGeneratorRepository, GenerateScheduleResponse } from "../.
 import http from "../http/httpClient";
 
 export class ScheduleGeneratorRepositoryHttp implements ScheduleGeneratorRepository {
-  private readonly baseUrl = "/horarios";
+  private readonly baseUrl = "/timetable";
 
   async generateSchedule(): Promise<GenerateScheduleResponse> {
-    const response = await http.post<GenerateScheduleResponse>(`${this.baseUrl}/generar`, {});
+    const response = await http.post<GenerateScheduleResponse>(`${this.baseUrl}/generate`, {});
     return response.data;
   }
 

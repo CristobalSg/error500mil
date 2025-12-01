@@ -1,5 +1,6 @@
 # Node/JavaScript
 node_modules/
+env_development.txt
 **/node_modules/
 dist/
 dev-dist/

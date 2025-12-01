@@ -25,7 +25,7 @@ class AppSettings:
     debug: bool = field(init=False)
     cors_origins: List[str] = field(default_factory=lambda: _parse_cors(os.getenv("CORS_ORIGINS")))
     fet_binary_path: Path = field(
-        default_factory=lambda: Path(os.getenv("FET_BINARY_PATH", "/app/algorithm/fet-7.5.5/fet-cl"))
+        default_factory=lambda: Path(os.getenv("FET_BINARY_PATH", "/usr/local/bin/fet-cl"))
     )
     fet_workdir: Path = field(
         default_factory=lambda: Path(os.getenv("FET_WORKDIR", "/tmp/fet-jobs"))

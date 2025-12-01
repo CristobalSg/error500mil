@@ -1,111 +1,111 @@
 services:
-  rooms-scheduler:
-    build:
-      context: ./rooms-scheduler
-      dockerfile: Dockerfile.dev
-    container_name: sgh-rooms-scheduler
-    volumes:
-      - ./rooms-scheduler:/app
-    networks:
-      - sgh-network
-    environment:
-      PORT: ${ROOMS_SCHEDULER_PORT}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      JWT_ALGORITHM: ${JWT_ALGORITHM}
-      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+# rooms-scheduler:
+#   build:
+#     context: ./rooms-scheduler
+#     dockerfile: Dockerfile.dev
+#   container_name: sgh-rooms-scheduler
+#   volumes:
+#     - ./rooms-scheduler:/app
+#   networks:
+#     - sgh-network
+#   environment:
+#     PORT: ${ROOMS_SCHEDULER_PORT}
+#     JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+#     JWT_ALGORITHM: ${JWT_ALGORITHM}
+#     JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
 
 # Base de datos PostgreSQL
-  postgres:
-    image: postgres:${POSTGRES_VERSION}
-    container_name: sgh-postgres
-    restart: "no"
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data_dev:/var/lib/postgresql/data
-    networks:
-      - sgh-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+# postgres:
+#   image: postgres:${POSTGRES_VERSION}
+#   container_name: sgh-postgres
+#   restart: "no"
+#   environment:
+#     POSTGRES_DB: ${POSTGRES_DB}
+#     POSTGRES_USER: ${POSTGRES_USER}
+#     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#   volumes:
+#     - postgres_data_dev:/var/lib/postgresql/data
+#   networks:
+#     - sgh-network
+#   healthcheck:
+#     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+#     interval: 30s
+#     timeout: 10s
+#     retries: 3
+#     start_period: 10s
 
 # Servicio del agente
-  agent:
-    build:
-      context: ./algo-agent
-      dockerfile: Dockerfile.dev
-    container_name: sgh-agent
-    restart: "no"
-    ports:
-      - "${AGENT_PORT}:8200"
-    volumes:
-      - ./algo-agent:/app
-    networks:
-      - sgh-network
-    environment:
-      PORT: ${AGENT_PORT}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      JWT_ALGORITHM: ${JWT_ALGORITHM}
-      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
-      SERVICE_AUTH_TOKEN: ${SERVICE_AUTH_TOKEN}
-      PYTHONPATH: ${PYTHONPATH}
-      PYTHONDONTWRITEBYTECODE: ${PYTHONDONTWRITEBYTECODE}
-      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
-      NODE_ENV: ${NODE_ENV}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
+# agent:
+#   build:
+#     context: ./algo-agent
+#     dockerfile: Dockerfile.dev
+#   container_name: sgh-agent
+#   restart: "no"
+#   ports:
+#     - "${AGENT_PORT}:8200"
+#   volumes:
+#     - ./algo-agent:/app
+#   networks:
+#     - sgh-network
+#   environment:
+#     PORT: ${AGENT_PORT}
+#     JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+#     JWT_ALGORITHM: ${JWT_ALGORITHM}
+#     JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+#     SERVICE_AUTH_TOKEN: ${SERVICE_AUTH_TOKEN}
+#     PYTHONPATH: ${PYTHONPATH}
+#     PYTHONDONTWRITEBYTECODE: ${PYTHONDONTWRITEBYTECODE}
+#     PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+#     NODE_ENV: ${NODE_ENV}
+#     CORS_ORIGINS: ${CORS_ORIGINS}
+#   depends_on:
+#     postgres:
+#       condition: service_healthy
+#     backend:
+#       condition: service_healthy
 
 # Backend FastAPI
-  backend:
-    build:
-      context: ./backend/fastapi
-      dockerfile: Dockerfile.dev
-    container_name: sgh-backend
-    restart: "no"
-    ports:
-      - "${BACKEND_PORT}:8000"
-    volumes:
-      - ./backend/fastapi:/app
-    env_file:
-      - .env.development
-    environment:
-      # Sobrescribir solo las variables que necesitan valores hardcoded
-      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME}
-      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
-      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL}
-      BACK_ENV: "development"
-      test: "false"
-      # Variables de desarrollo para docente
-      DEV_DOCENTE_NAME: ${DEV_DOCENTE_NAME}
-      DEV_DOCENTE_EMAIL: ${DEV_DOCENTE_EMAIL}
-      DEV_DOCENTE_PASSWORD: ${DEV_DOCENTE_PASSWORD}
-      DEV_DOCENTE_DEPARTAMENTO: ${DEV_DOCENTE_DEPARTAMENTO}
-      # Variables de desarrollo para estudiante
-      DEV_ESTUDIANTE_NAME: ${DEV_ESTUDIANTE_NAME}
-      DEV_ESTUDIANTE_EMAIL: ${DEV_ESTUDIANTE_EMAIL}
-      DEV_ESTUDIANTE_PASSWORD: ${DEV_ESTUDIANTE_PASSWORD}
-      DEV_ESTUDIANTE_MATRICULA: ${DEV_ESTUDIANTE_MATRICULA}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - sgh-network
-    healthcheck:
-      # CAMBIAR: Usar GET en lugar de HEAD/spider
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --timeout=10 -O /dev/null http://localhost:8000/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+# backend:
+#   build:
+#     context: ./backend/fastapi
+#     dockerfile: Dockerfile.dev
+#   container_name: sgh-backend
+#   restart: "no"
+#   ports:
+#     - "${BACKEND_PORT}:8000"
+#   volumes:
+#     - ./backend/fastapi:/app
+#   env_file:
+#     - .env.development
+#   environment:
+#     # Sobrescribir solo las variables que necesitan valores hardcoded
+#     INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME}
+#     INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+#     INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL}
+#     BACK_ENV: "development"
+#     test: "false"
+#     # Variables de desarrollo para docente
+#     DEV_DOCENTE_NAME: ${DEV_DOCENTE_NAME}
+#     DEV_DOCENTE_EMAIL: ${DEV_DOCENTE_EMAIL}
+#     DEV_DOCENTE_PASSWORD: ${DEV_DOCENTE_PASSWORD}
+#     DEV_DOCENTE_DEPARTAMENTO: ${DEV_DOCENTE_DEPARTAMENTO}
+#     # Variables de desarrollo para estudiante
+#     DEV_ESTUDIANTE_NAME: ${DEV_ESTUDIANTE_NAME}
+#     DEV_ESTUDIANTE_EMAIL: ${DEV_ESTUDIANTE_EMAIL}
+#     DEV_ESTUDIANTE_PASSWORD: ${DEV_ESTUDIANTE_PASSWORD}
+#     DEV_ESTUDIANTE_MATRICULA: ${DEV_ESTUDIANTE_MATRICULA}
+#   depends_on:
+#     postgres:
+#       condition: service_healthy
+#   networks:
+#     - sgh-network
+#   healthcheck:
+#     # CAMBIAR: Usar GET en lugar de HEAD/spider
+#     test: ["CMD-SHELL", "wget --no-verbose --tries=1 --timeout=10 -O /dev/null http://localhost:8000/api/health || exit 1"]
+#     interval: 30s
+#     timeout: 10s
+#     retries: 3
+#     start_period: 30s
 #  Frontend React + Vite + Tailwind
   mobile:
     build:
@@ -128,9 +128,6 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       VITE_API_URL: ${API_URL}
-    depends_on:
-      backend:
-        condition: service_healthy
     networks:
       - sgh-network
     healthcheck:
@@ -141,9 +138,9 @@ services:
       start_period: 40s
 
 # Volúmenes para persistencia de datos
-volumes:
-  postgres_data_dev:
-    driver: local
+ # volumes:
+ #   postgres_data_dev:
+ #     driver: local
 
 # Red personalizada para aislar los servicios
 networks:

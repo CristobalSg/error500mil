@@ -60,7 +60,7 @@ class TimetableService:
         self.sala_repository = sala_repository
         self.edificio_repository = edificio_repository
         self.user_repository = user_repository
-        self.agent_url = settings.agent_api_url or "http://agent:8200"
+        self.agent_url = settings.agent_api_url or "http://agent.sgh.svc:8200/api"
         self.activities_mapping_path = os.getenv(
             "ACTIVITIES_MAPPING_PATH", "data/docente_asignaturas.csv"
         )
@@ -391,7 +391,7 @@ class TimetableService:
             # Enviar al agente
             async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
-                    f"{self.agent_url}/timetable/generate",
+                    f"{self.agent_url}/fet/run",
                     json=request.model_dump(),
                     headers={
                         "Authorization": f"Bearer {settings.service_auth_token}",

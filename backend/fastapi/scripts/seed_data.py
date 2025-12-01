@@ -36,7 +36,7 @@ from infrastructure.repositories.user_repository import SQLUserRepository
 
 logger = logging.getLogger("seed_data")
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(levelname)s %(asctime)s [%(name)s] %(message)s",
 )
 
@@ -54,6 +54,7 @@ def _open_session():
 
 
 def load_asignaturas(session, path: Path) -> Tuple[int, int]:
+    logger.info("Cargando asignaturas desde %s", path)
     created = updated = 0
     repo = AsignaturaRepository(session)
     with path.open(encoding="utf-8") as fh:
@@ -89,6 +90,7 @@ def load_asignaturas(session, path: Path) -> Tuple[int, int]:
 
 
 def load_docentes(session, path: Path, default_password: str) -> Tuple[int, int]:
+    logger.info("Cargando docentes desde %s", path)
     created = updated = 0
     user_repo = SQLUserRepository(session)
     docente_repo = DocenteRepository(session)
@@ -96,12 +98,15 @@ def load_docentes(session, path: Path, default_password: str) -> Tuple[int, int]
     with path.open(encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         for row in reader:
+            logger.info("Cargando docente: %s", row)
             email = row["email"].strip()
             nombre = row["nombre"].strip()
             activo = str(row.get("activo", "true")).lower() in ("true", "1", "yes", "si")
 
+            logger.debug("Procesando docente %s (%s)", nombre, email)
             user = user_repo.get_by_email(email, include_deleted=True)
             if not user:
+                logger.debug("Creando nuevo usuario docente para %s", email)
                 try:
                     user = user_repo.create(
                         UserCreate(
@@ -116,7 +121,9 @@ def load_docentes(session, path: Path, default_password: str) -> Tuple[int, int]
                 except ValidationError as exc:
                     logger.error("Error creando docente %s: %s", email, exc)
                     continue
+                logger.debug("Usuario docente creado con ID %s", user.id)
             else:
+                logger.debug("Actualizando usuario docente existente para %s", email)
                 needs_update = False
                 update_payload = UserUpdate()
                 if user.nombre != nombre:
@@ -131,11 +138,13 @@ def load_docentes(session, path: Path, default_password: str) -> Tuple[int, int]
                 if needs_update:
                     user_repo.update(user.id, update_payload)
                 # Rotar contraseña si no coincide con el hash actual
-                if not AuthService.verify_password(default_password, user.pass_hash):
+                if default_password:
+                    logger.debug("Rotando contraseña para usuario %s", email)
                     user.pass_hash = AuthService.get_password_hash(default_password)
                     session.add(user)
                     session.commit()
                 updated += 1
+                logger.debug("Usuario docente actualizado con ID %s", user.id)
 
             # Asegurar registro en tabla docente
             if not docente_repo.get_by_user_id(user.id):
@@ -158,6 +167,7 @@ def load_secciones(
     asignatura_id: int,
     semestre: int,
 ) -> Tuple[int, int]:
+    logger.info("Cargando secciones para asignatura_id=%s semestre=%s desde %s", asignatura_id, semestre, path)
     created = updated = 0
     repo = SeccionRepository(session)
     with path.open(encoding="utf-8") as fh:
